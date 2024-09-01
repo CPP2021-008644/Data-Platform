@@ -1,0 +1,10 @@
+## Ignore secrets
+
+secrets/*
+
+.env
+pgser
+
+# # vscode
+.vscode
+.venv

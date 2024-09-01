@@ -1,0 +1,3 @@
+[submodule "pg/osc-physrisk-metadata"]
+	path = pg/osc-physrisk-metadata
+	url = https://github.com/os-climate/osc-physrisk-metadata.git

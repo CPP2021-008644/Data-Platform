@@ -1,0 +1,91 @@
+name: 'dtpltbase'
+services:
+  postgres:
+    container_name: pgdb
+    image: timescale/timescaledb-ha:pg16.3-ts2.15.3
+
+    environment:
+      POSTGRES_DB: dataplat
+      POSTGRES_USER: dbadmn
+      POSTGRES_PASSWORD_FILE: /var/run/secrets/pgps
+      TS_TUNE_MAX_CONNS: 400
+      TIMESCALEDB_TELEMETRY: off
+      TS_TUNE_MEMORY: 24GB
+      TS_TUNE_CPUS: 8
+      TS_TUNE_WAL_DISK_SIZE: 27GB
+
+    volumes:
+      - dtpltpg:/home/postgres/pgdata
+      # This has to have a name that sorts before 001_timescaledb_tune.sh
+      # because that script ends runnning timescaledb-tune, 
+      # which will restart postgres and no more init scripts will be run after
+      - ./pg/dbinit.sh:/docker-entrypoint-initdb.d/000_zBaseInit.sh # As an example we will add the schema from osc-physrisk-metadata. (LICENSE Apache-2.0)
+      - ./pg/taxonomy.sql:/docker-entrypoint-initdb.d/001_taxonomy.sql
+      - "./pg/osc-physrisk-metadata/src/sql/DDL Create PhysRisk Database.sql:/tmp/base"
+      - "./pg/osc-physrisk-metadata/src/sql/PhysRisk Database seed data.sql:/tmp/basedata"
+      - ./pg/backfill.sql:/tmp/backfill
+      - ./pg/001_timescaledb_tune.sh:/docker-entrypoint-initdb.d/002_timescaledb_tune.sh
+
+    networks:
+      - dtplt
+
+    restart: always
+
+    ports:
+      - "25432:5432"
+
+    secrets:
+      - source: pg
+        target: pgps
+      - source: pgauth
+        target: auth
+      - source: pgairflow
+        target: airflow
+
+  minio:
+    container_name: mini
+    image: bitnami/minio:2024.7.16-debian-12-r2
+
+    volumes:
+      - dtpltminio:/bitnami/minio/data
+      - ./dummydata.zip:/tmp/dummydata.zip:ro
+
+    secrets:
+      - source: dtpltminitial
+        target: minitial
+      - source: dtpltseedminio
+        target: seedminio
+
+    networks:
+      - dtplt
+
+    restart: always
+
+    env_file:
+      - ./secrets/minio/.envminio_firstrun
+
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+networks:
+  dtplt:
+    driver: bridge
+
+secrets:
+  pg:
+    file: ./secrets/postgres/dtpltpgfile
+  pgauth:
+    file: ./secrets/postgres/dtpltauth.sql
+  pgairflow:
+    file: ./secrets/postgres/dtpltairflow.sql
+  dtpltminitial:
+    file: ./secrets/minio/initial.sh
+  dtpltseedminio:
+    file: ./secrets/minio/seed_minio.sh
+
+volumes:
+  dtpltpg:
+    driver: local
+  dtpltminio:
+    driver: local

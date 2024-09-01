@@ -1,0 +1,5 @@
+physrisk-lib
+osc-physrisk-financial
+psycopg
+asyncpg
+pandas==2.1.4

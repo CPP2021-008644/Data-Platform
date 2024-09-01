@@ -1,0 +1,8 @@
+pandas>=2.1
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+openpyxl>=3.1
+pytest>=8.0
+
+# Nota: no se usa Poetry, instalar con pip

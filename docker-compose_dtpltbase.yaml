@@ -1,0 +1,45 @@
+name: 'dtpltbase'
+services:
+  postgres:
+    container_name: pgdb
+    image: timescale/timescaledb-ha:pg16.3-ts2.15.3
+
+    volumes:
+      - dtpltpg:/home/postgres/pgdata
+
+    networks:
+      - dtplt
+
+    restart: always
+
+    ports:
+      - "25432:5432"
+
+  minio:
+    container_name: mini
+    image: bitnami/minio:2024.7.16-debian-12-r2
+
+    volumes:
+      - dtpltminio:/bitnami/minio/data
+
+    networks:
+      - dtplt
+
+    restart: always
+
+    env_file:
+      - ./secrets/minio/.envminio
+
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+networks:
+  dtplt:
+   driver: bridge
+
+volumes:
+  dtpltpg:
+    driver: local
+  dtpltminio:
+    driver: local
